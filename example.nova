@@ -1,1 +1,46 @@
-let x = 5 + y;
+// Define a variable
+let x = 42;
+
+// Basic arithmetic
+let y = x + 5 - 3 * 7 / 2;
+
+// Conditional statement
+if (x > y) {
+    // If block
+    let result = x - y;
+    print("Result is:", result);
+} else {
+    // Else block
+    let result = y - x;
+    print("Result is:", result);
+}
+
+// Function definition
+fn add(a, b) {
+    return a + b;
+}
+
+// Function call
+let sum = add(x, y);
+print("Sum is:", sum);
+
+// Loop example
+let i = 0;
+while (i < 10) {
+    print("Loop iteration:", i);
+    i = i + 1;
+}
+
+// Boolean expressions
+let is_greater = x > y;
+if (is_greater) {
+    print("x is greater than y");
+} else {
+    print("x is not greater than y");
+}
+
+// Multi-line comment
+/*
+This is a multi-line comment.
+It should be ignored by the lexer.
+*/

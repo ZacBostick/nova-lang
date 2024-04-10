@@ -20,6 +20,13 @@ impl Lexer {
         lexer.read_char();
         lexer
     }
+    fn peek_char(&self) -> char {
+        if self.read_position >= self.input.len() {
+            '\0'
+        } else {
+            self.input.chars().nth(self.read_position).unwrap_or('\0')
+        }
+    }
 
     fn read_char(&mut self) {
         if self.read_position >= self.input.len() {
@@ -30,50 +37,101 @@ impl Lexer {
         self.position = self.read_position;
         self.read_position += 1;
     }
-
+    fn skip_comment(&mut self) {
+        while self.ch != '\n' && self.ch != '\0' {
+            self.read_char();
+        }
+    }
+    fn read_string(&mut self) -> String {
+        let start_position = self.position + 1; 
+        loop {
+            self.read_char();
+            if self.ch == '"' || self.ch == '\0' { 
+                break;
+            }
+        }
+        let end_position = self.position;
+        if self.ch == '"' {
+            self.read_char();
+        }
+        self.input[start_position..end_position].to_string()
+    }
+    fn skip_multi_line_comment(&mut self) {
+        loop {
+            self.read_char();
+            if self.ch == '*' && self.peek_char() == '/' {
+                self.read_char(); 
+                self.read_char(); 
+                break;
+            } else if self.ch == '\0' {
+                break;
+            }
+        }
+    }
+    
     pub fn next_token(&mut self) -> Token {
-        let token;
         self.skip_whitespace();
-
-        match self.ch {
-            '+' => {
-                token = Token {
-                    token_type: TokenType::Plus,
-                    literal: self.ch.to_string(),
-                };
-            },
+        if self.ch == '/' {
+            if self.peek_char() == '/' {
+                self.skip_comment();
+                self.read_char();
+                return self.next_token();
+            } else if self.peek_char() == '*' {
+                self.skip_multi_line_comment();
+                return self.next_token();
+            }
+        }
+        
+        let token = match self.ch {
+            '+' => Token { token_type: TokenType::Plus, literal: self.ch.to_string() },
+            '-' => Token { token_type: TokenType::Minus, literal: self.ch.to_string() },
+            '*' => Token { token_type: TokenType::Asterisk, literal: self.ch.to_string() },
+            '/' => Token { token_type: TokenType::Slash, literal: self.ch.to_string() },
+            '=' => Token { token_type: TokenType::Equal, literal: self.ch.to_string() },
+            '!' => Token { token_type: TokenType::NotEqual, literal: self.ch.to_string() },
+            '<' => Token { token_type: TokenType::LessThan, literal: self.ch.to_string() },
+            '>' => Token { token_type: TokenType::GreaterThan, literal: self.ch.to_string() },
+            '(' => Token { token_type: TokenType::LParen, literal: self.ch.to_string() },
+            ')' => Token { token_type: TokenType::RParen, literal: self.ch.to_string() },
+            '{' => Token { token_type: TokenType::LBrace, literal: self.ch.to_string() },
+            '}' => Token { token_type: TokenType::RBrace, literal: self.ch.to_string() },
+            ',' => Token { token_type: TokenType::Comma, literal: self.ch.to_string() },
+            ';' => Token { token_type: TokenType::Semicolon, literal: self.ch.to_string() },
+            '"' => {
+                let literal = self.read_string();
+                return Token { token_type: TokenType::Str(literal.clone()), literal };
+            },            
+            
             '0'..='9' => {
-                let literal = self.read_number();
-                token = Token {
-                    token_type: TokenType::Int(literal.parse::<i64>().unwrap()),
-                    literal,
+            let literal = self.read_number();
+                return Token { 
+                    token_type: TokenType::Int(literal.parse::<i64>().expect("Failed to parse integer")),
+                    literal 
                 };
-                return token;
             },
             _ if Lexer::is_letter(self.ch) => {
                 let literal = self.read_identifier();
-                token = Token {
-                    token_type: TokenType::Ident(literal.clone()),
-                    literal,
+                let token_type = match literal.as_str() {
+                    "let" => TokenType::Let,
+                    "fn" => TokenType::Fn,
+                    "if" => TokenType::If,
+                    "else" => TokenType::Else,
+                    "return" => TokenType::Return,
+                    "true" => TokenType::True,
+                    "false" => TokenType::False,
+                    _ => TokenType::Ident(literal.clone()),
                 };
-                return token;
+                return Token { token_type, literal };
             },
-            '\0' => {
-                token = Token {
-                    token_type: TokenType::EOF,
-                    literal: "".to_string(),
-                };
+            '\0' => Token { 
+                token_type: TokenType::EOF, 
+                literal: "".to_string() 
             },
-            _ => {
-                token = Token {
-                    token_type: TokenType::EOF,
-                    literal: "".to_string(),
-                };
-            },
-        }
-        self.read_char();
-        token
-    }
+            _ => Token { token_type: TokenType::Illegal, literal: self.ch.to_string() },
+        };
+    self.read_char();
+    token
+}
 
     fn read_number(&mut self) -> String {
         let start_position = self.position;
