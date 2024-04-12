@@ -1,3 +1,5 @@
+// src/main.rs
+
 use std::env;
 use std::fs;
 

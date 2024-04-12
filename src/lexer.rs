@@ -159,3 +159,56 @@ impl Lexer {
         ch.is_alphabetic() || ch == '_'
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn assert_token_type(token: &Token, expected_type: &TokenType) {
+        match (expected_type, &token.token_type) {
+            (TokenType::Int(_), TokenType::Int(_)) => (),
+            (TokenType::Str(_), TokenType::Str(_)) => (),
+            (expected, actual) => assert_eq!(expected, actual),
+        }
+    }
+    #[test]
+    fn test_operators() {
+        let input = "+ - * / = ! < >";
+        let mut lexer = Lexer::new(input.to_string());
+        let expected_tokens = vec![
+            TokenType::Plus, TokenType::Minus, TokenType::Asterisk, TokenType::Slash,
+            TokenType::Equal, TokenType::NotEqual, TokenType::LessThan, TokenType::GreaterThan,
+        ];
+
+        for expected in expected_tokens {
+            let token = lexer.next_token();
+            assert_token_type(&token, &expected);
+        }
+    }
+    #[test]
+    fn test_numbers() {
+        let input = "123 456 789";
+        let mut lexer = Lexer::new(input.to_string());
+        let expected_values = [123, 456, 789];
+    
+        for &expected in expected_values.iter() {
+            let token = lexer.next_token();
+            if let TokenType::Int(value) = token.token_type {
+                assert_eq!(value, expected);
+            } else {
+                panic!("Expected integer token, found {:?}", token.token_type);
+            }
+        }
+    }
+    #[test]
+    fn test_strings() {
+        let input = "\"hello\" \"world\"";
+        let mut lexer = Lexer::new(input.to_string());
+
+        for expected in ["hello", "world"].iter() {
+            let token = lexer.next_token();
+            match token.token_type {
+                TokenType::Str(ref s) if s == expected => (),
+                _ => panic!("Expected Str({}), found {:?}", expected, token.token_type),
+            }
+        }
+    }
+}
