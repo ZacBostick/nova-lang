@@ -211,4 +211,67 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn test_whitespace_and_comments() {
+        let input = r#"
+            // This is a single-line comment
+            /* This is a
+               multi-line comment */
+            42
+            // Another comment
+        "#;
+        let mut lexer = Lexer::new(input.to_string());
+        let token = lexer.next_token();
+        match token.token_type {
+            TokenType::Int(value) => assert_eq!(value, 42),
+            _ => panic!("Expected Int, found {:?}", token.token_type),
+        }
+        assert_eq!(lexer.next_token().token_type, TokenType::EOF);
+    }
+    #[test]
+    fn test_keywords_and_identifiers() {
+        let input = "let variable = if else fn return";
+        let mut lexer = Lexer::new(input.to_string());
+        let expected_tokens = [
+            TokenType::Let, TokenType::Ident("variable".to_string()), TokenType::Equal,
+            TokenType::If, TokenType::Else, TokenType::Fn, TokenType::Return,
+        ];
+        for expected in expected_tokens.iter() {
+            let token = lexer.next_token();
+            assert_token_type(&token, expected);
+        }
+    }
+    #[test]
+    fn test_combined_syntax() {
+        let input = "fn add(x, y) { x + y; }";
+        let mut lexer = Lexer::new(input.to_string());
+        let expected_tokens = [
+            TokenType::Fn, TokenType::Ident("add".to_string()),
+            TokenType::LParen, TokenType::Ident("x".to_string()), TokenType::Comma, TokenType::Ident("y".to_string()),
+            TokenType::RParen, TokenType::LBrace, TokenType::Ident("x".to_string()), TokenType::Plus,
+            TokenType::Ident("y".to_string()), TokenType::Semicolon, TokenType::RBrace
+        ];
+        for expected in expected_tokens.iter() {
+            let token = lexer.next_token();
+            assert_token_type(&token, expected);
+        }
+    }
+    #[test]
+    fn test_illegal_characters() {
+        let input = "@ # $ % ^ &";
+        let mut lexer = Lexer::new(input.to_string());
+        for _ in 0..6 {
+            let token = lexer.next_token();
+            assert_eq!(token.token_type, TokenType::Illegal);
+        }
+    }
+    #[test]
+    fn test_eof() {
+        let input = "variable";
+        let mut lexer = Lexer::new(input.to_string());
+        assert_token_type(&lexer.next_token(), &TokenType::Ident("variable".to_string()));
+        assert_eq!(lexer.next_token().token_type, TokenType::EOF);
+        assert_eq!(lexer.next_token().token_type, TokenType::EOF);
+    }
+                       
 }
