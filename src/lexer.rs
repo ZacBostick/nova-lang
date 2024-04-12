@@ -273,5 +273,5 @@ mod tests {
         assert_eq!(lexer.next_token().token_type, TokenType::EOF);
         assert_eq!(lexer.next_token().token_type, TokenType::EOF);
     }
-                       
+            
 }

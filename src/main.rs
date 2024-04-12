@@ -5,6 +5,8 @@ use std::fs;
 
 mod token;
 mod lexer;
+mod ast;
+mod parser;
 
 use crate::lexer::Lexer;
 use crate::token::TokenType;
