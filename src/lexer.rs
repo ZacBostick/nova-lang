@@ -119,6 +119,7 @@ impl Lexer {
                     "return" => TokenType::Return,
                     "true" => TokenType::True,
                     "false" => TokenType::False,
+                    "function" => TokenType::Function,
                     _ => TokenType::Ident(literal.clone()),
                 };
                 return Token { token_type, literal };

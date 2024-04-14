@@ -45,24 +45,33 @@ impl Parser {
         match self.current_token.token_type {
             TokenType::Let => self.parse_let_statement(),
             TokenType::Return => self.parse_return_statement(),
+            TokenType::Function => self.parse_function_declaration(),
             _ => {
-                println!("Unhandled statement type: {:?}", self.current_token.token_type);
+                self.errors.push(format!(
+                    "Unhandled statement type: {:?}",
+                    self.current_token.token_type
+                ));
                 None
             }
         }
     }
-
+    fn peek_token_is(&self, t: TokenType) -> bool {
+        self.peek_token.token_type == t
+    }
     fn parse_expression(&mut self) -> Option<Expression> {
-        match &self.current_token.token_type {
+        let token_type = self.current_token.token_type.clone();
+        match token_type {
             TokenType::Ident(name) => {
-                let identifier = name.clone();
                 self.next_token();
-                Some(Expression::Identifier(identifier))
+                Some(Expression::Identifier(name))
             },
             TokenType::Int(value) => {
-                let number = *value;
                 self.next_token();
-                Some(Expression::IntegerLiteral(number))
+                Some(Expression::IntegerLiteral(value))
+            },
+            TokenType::Bool(value) => {
+                self.next_token();
+                Some(Expression::Boolean(value))
             },
             _ => {
                 self.errors.push(format!("Unexpected token in expression: {:?}", self.current_token.token_type));
@@ -70,6 +79,7 @@ impl Parser {
             }
         }
     }
+    
     
     fn parse_let_statement(&mut self) -> Option<Statement> {
         self.next_token();
@@ -141,6 +151,72 @@ impl Parser {
     fn current_token_is(&self, t: TokenType) -> bool {
         self.current_token.token_type == t
     }
+    fn parse_function_declaration(&mut self) -> Option<Statement> {
+        if !self.expect_peek(TokenType::Function) {
+            return None;
+        }
+        println!("Parsing function declaration. Current token: {:?}", self.current_token);
+        self.next_token();
+        let function_name = if let TokenType::Ident(name) = &self.current_token.token_type {
+            name.clone()
+        } else {
+            self.errors.push("Expected function name".to_string());
+            return None;
+        };
+
+        self.next_token();
+        if !self.expect_peek(TokenType::LParen) {
+            return None;
+        }
+
+        let parameters = self.parse_function_parameters();
+        
+        if !self.expect_peek(TokenType::LBrace) {
+            return None;
+        }
+
+        let body = self.parse_block_statement();
+        Some(Statement::Function(function_name, parameters, body))
+    }
+
+    fn parse_function_parameters(&mut self) -> Vec<String> {
+        let mut parameters = Vec::new();
+
+        if self.peek_token_is(TokenType::RParen) {
+            self.next_token();
+            return parameters;
+        }
+        self.next_token();
+        if let TokenType::Ident(param) = &self.current_token.token_type {
+            parameters.push(param.clone());
+        }
+        while self.peek_token_is(TokenType::Comma) {
+            self.next_token();
+            self.next_token();
+            if let TokenType::Ident(param) = &self.current_token.token_type {
+                parameters.push(param.clone());
+            } else {
+                self.errors.push("Expected parameter name".to_string());
+                break;
+            }
+        }
+        if !self.expect_peek(TokenType::RParen) {
+            self.errors.push("Expected ')' after parameters".to_string());
+        }
+        parameters
+    }
+
+    fn parse_block_statement(&mut self) -> Vec<Statement> {
+        let mut statements = Vec::new();
+        self.next_token();
+        while !self.current_token_is(TokenType::RBrace) && !self.current_token_is(TokenType::EOF) {
+            if let Some(stmt) = self.parse_statement() {
+                statements.push(stmt);
+            }
+            self.next_token();
+        }
+        statements
+    }
 }
 
 #[cfg(test)]
@@ -160,7 +236,7 @@ mod tests {
         }
         assert!(parser.errors.is_empty(), "Parser errors: {:?}", parser.errors);
     }
-    
+
     #[test]
     fn test_return_statements() {
         let input = "return 123;";
@@ -190,5 +266,26 @@ mod tests {
         } else {
             panic!("Failed to parse expression statement, errors: {:?}", parser.errors);
         }
-    }  
+    }
+    #[test]
+    fn test_function_declarations() {
+        let input = r#"
+        function add(x, y) {
+            return x + y;
+        }
+        "#;
+        let lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
+        assert_eq!(parser.current_token.token_type, TokenType::Function, "First token is not 'Function'");
+    }
+    
+    #[test]
+    fn test_function_keyword() {
+        let input = "function";
+        let mut lexer = Lexer::new(input.to_string());
+        let token = lexer.next_token();
+        assert_eq!(token.token_type, TokenType::Function, "Failed to recognize 'function' as a keyword");
+    }
+
 }
+

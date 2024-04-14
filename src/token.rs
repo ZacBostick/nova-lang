@@ -28,6 +28,8 @@ pub enum TokenType {
     Comma,
     Semicolon,
     Str(String),
+    Bool(bool),
+    Function
 }
 
 #[derive(Debug, PartialEq, Clone)]
