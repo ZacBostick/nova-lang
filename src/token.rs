@@ -29,7 +29,8 @@ pub enum TokenType {
     Semicolon,
     Str(String),
     Bool(bool),
-    Function
+    Function,
+    Bang
 }
 
 #[derive(Debug, PartialEq, Clone)]

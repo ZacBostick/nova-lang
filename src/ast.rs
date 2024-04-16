@@ -20,3 +20,15 @@ pub enum Expression {
     Function(Vec<String>, Vec<Statement>),
     Call(Box<Expression>, Vec<Expression>),
 }
+
+#[derive(PartialEq, PartialOrd)] 
+enum Precedence {
+    Lowest,
+    Equals,      
+    LessGreater, 
+    Sum,         
+    Product,      
+    Prefix,      
+    Call,        
+}
+
