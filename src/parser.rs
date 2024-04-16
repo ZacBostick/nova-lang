@@ -301,7 +301,17 @@ mod tests {
             assert!(!parser.errors.is_empty(), "Expected errors for input: {}", input);
         }
     }
-    
+    #[test]
+    fn test_unexpected_token() {
+        let input = r#"
+        let x = function(y, z) return y + z; // Using 'function' in an expression improperly
+        "#;
+        let lexer = Lexer::new(input.to_string());
+        let mut parser = Parser::new(lexer);
+        parser.parse_statement();
+        assert!(!parser.errors.is_empty(), "Expected errors for misuse of 'function' keyword");
+    }
+       
     
 }
 
