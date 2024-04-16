@@ -286,6 +286,22 @@ mod tests {
         let token = lexer.next_token();
         assert_eq!(token.token_type, TokenType::Function, "Failed to recognize 'function' as a keyword");
     }
-
+    #[test]
+    fn test_improper_syntax() {
+        let inputs = vec![
+            "function { return; }",
+            "function test(x, y { return x + y; }",
+            "function test(x, y) return x + y;",
+        ];
+    
+        for input in inputs {
+            let lexer = Lexer::new(input.to_string());
+            let mut parser = Parser::new(lexer);
+            parser.parse_statement();
+            assert!(!parser.errors.is_empty(), "Expected errors for input: {}", input);
+        }
+    }
+    
+    
 }
 
